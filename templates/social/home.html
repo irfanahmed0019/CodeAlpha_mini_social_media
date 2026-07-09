@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+
+{% block main_content %}
+
+<!-- Quick post box -->
+<div class="card-style p-4 mb-5" style="background:white">
+  <form method="post" action="{% url 'create_post' %}" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="flex gap-3 mb-3">
+      {% if request.user.profile.avatar %}
+        <img src="{{ request.user.profile.avatar.url }}" alt="" class="avatar avatar-md flex-shrink-0" />
+      {% else %}
+        <div class="avatar avatar-md flex-shrink-0">{{ request.user.username|first|upper }}</div>
+      {% endif %}
+      <textarea name="content" class="form-input flex-1" placeholder="What's on your mind, {{ request.user.first_name|default:request.user.username }}?" rows="2" maxlength="2200" style="min-height:60px"></textarea>
+    </div>
+    <div class="flex items-center justify-between gap-3">
+      <label class="btn-ghost cursor-pointer" style="font-size:13px">
+        <span class="material-symbols-outlined" style="font-size:18px">image</span>
+        Photo
+        <input type="file" name="image" accept="image/*" class="hidden" />
+      </label>
+      <div class="flex items-center gap-3">
+        <span id="char-counter" style="font-size:12px;color:#8a6555">2200</span>
+        <button type="submit" class="btn-primary" style="padding:7px 18px">
+          <span class="material-symbols-outlined" style="font-size:16px">send</span>
+          Post
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- Feed -->
+{% if posts %}
+  {% for post in posts %}
+  <article class="post-card fade-in">
+    <div class="post-header">
+      <a href="{% url 'profile' username=post.user.username %}">
+        {% if post.user.profile.avatar %}
+          <img src="{{ post.user.profile.avatar.url }}" alt="" class="avatar avatar-md" />
+        {% else %}
+          <div class="avatar avatar-md">{{ post.user.username|first|upper }}</div>
+        {% endif %}
+      </a>
+      <div class="flex-1 min-w-0">
+        <a href="{% url 'profile' username=post.user.username %}" class="username-link text-sm">{{ post.user.username }}</a>
+        {% if post.user.get_full_name %}
+          <span class="text-xs" style="color:#8a6555"> · {{ post.user.get_full_name }}</span>
+        {% endif %}
+        <p class="post-time">{{ post.created_at|timesince }} ago</p>
+      </div>
+      {% if post.user == request.user %}
+        <form method="post" action="{% url 'delete_post' post_id=post.id %}" style="display:inline" onsubmit="return confirm('Delete this post?')">
+          {% csrf_token %}
+          <button type="submit" class="btn-ghost" style="padding:4px 8px;font-size:12px;color:#bb010d">
+            <span class="material-symbols-outlined" style="font-size:16px">delete</span>
+          </button>
+        </form>
+      {% endif %}
+    </div>
+
+    <div class="post-body">
+      <p style="font-size:15px;line-height:1.6;white-space:pre-wrap">{{ post.content }}</p>
+    </div>
+
+    {% if post.image %}
+      <div class="post-image">
+        <img src="{{ post.image.url }}" alt="Post image" loading="lazy" />
+      </div>
+    {% endif %}
+
+    <div class="post-actions">
+      <button class="like-btn {% if post.id in liked_post_ids %}liked{% endif %}"
+              data-post-id="{{ post.id }}">
+        <span class="material-symbols-outlined like-icon" style="font-size:20px;{% if post.id in liked_post_ids %}font-variation-settings:'FILL' 1{% endif %}">favorite</span>
+        <span class="like-count">{{ post.likes_count }}</span>
+      </button>
+      <a href="{% url 'post_detail' post_id=post.id %}" class="comment-btn">
+        <span class="material-symbols-outlined" style="font-size:20px">chat_bubble</span>
+        <span>{{ post.comments_count }}</span>
+      </a>
+      <div class="flex-1"></div>
+      <a href="{% url 'post_detail' post_id=post.id %}" class="btn-ghost" style="font-size:12px;padding:5px 10px">
+        View
+        <span class="material-symbols-outlined" style="font-size:14px">arrow_forward</span>
+      </a>
+    </div>
+  </article>
+  {% endfor %}
+{% else %}
+  <div class="empty-state">
+    <div class="empty-icon">🌱</div>
+    <h3>Your feed is empty</h3>
+    <p>Follow some people or make your first post!</p>
+    <a href="{% url 'explore' %}" class="btn-primary mt-4">
+      <span class="material-symbols-outlined" style="font-size:16px">explore</span>
+      Explore people
+    </a>
+  </div>
+{% endif %}
+
+{% endblock %}
+
+{% block right_panel %}
+<!-- Suggested users -->
+{% if suggested_users %}
+<div class="card-style p-4" style="background:white">
+  <h3 class="font-extrabold text-sm mb-4" style="color:#29170c;letter-spacing:-0.02em">WHO TO FOLLOW</h3>
+  <div class="flex flex-col gap-3">
+    {% for u in suggested_users %}
+    <div class="flex items-center gap-3">
+      <a href="{% url 'profile' username=u.username %}">
+        {% if u.profile.avatar %}
+          <img src="{{ u.profile.avatar.url }}" alt="" class="avatar avatar-sm" />
+        {% else %}
+          <div class="avatar avatar-sm">{{ u.username|first|upper }}</div>
+        {% endif %}
+      </a>
+      <div class="flex-1 min-w-0">
+        <a href="{% url 'profile' username=u.username %}" class="username-link text-sm leading-tight">{{ u.username }}</a>
+        <p style="font-size:11px;color:#8a6555">{{ u.profile.followers_count }} followers</p>
+      </div>
+      <button class="follow-btn not-following" data-username="{{ u.username }}">Follow</button>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

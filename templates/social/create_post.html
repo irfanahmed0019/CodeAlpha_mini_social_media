@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}New Post{% endblock %}
+
+{% block main_content %}
+
+<div class="card-style p-6" style="background:white;max-width:580px;margin:0 auto">
+  <h1 class="font-extrabold text-xl mb-6" style="color:#29170c">
+    <span class="material-symbols-outlined" style="vertical-align:middle;font-size:22px">add_box</span>
+    Create a new post
+  </h1>
+
+  <form method="post" enctype="multipart/form-data" class="flex flex-col gap-5">
+    {% csrf_token %}
+
+    <!-- Author -->
+    <div class="flex items-center gap-3" style="padding:12px;background:#fff8f5;border:2px solid #ffeadf;border-radius:10px">
+      {% if request.user.profile.avatar %}
+        <img src="{{ request.user.profile.avatar.url }}" alt="" class="avatar avatar-md" />
+      {% else %}
+        <div class="avatar avatar-md">{{ request.user.username|first|upper }}</div>
+      {% endif %}
+      <div>
+        <p class="font-bold text-sm">{{ request.user.username }}</p>
+        {% if request.user.get_full_name %}<p class="text-xs" style="color:#8a6555">{{ request.user.get_full_name }}</p>{% endif %}
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div>
+      <label class="block text-sm font-bold mb-2" style="color:#29170c">What's on your mind?</label>
+      {% if form.content.errors %}
+        <div class="alert alert-error">{{ form.content.errors }}</div>
+      {% endif %}
+      <textarea id="id_content" name="content" class="form-input"
+                placeholder="Share something with your followers..."
+                rows="5" maxlength="2200" style="min-height:140px">{{ form.content.value|default:'' }}</textarea>
+      <div class="flex justify-end mt-1">
+        <span id="char-counter" style="font-size:12px;color:#8a6555">2200</span>
+      </div>
+    </div>
+
+    <!-- Image upload -->
+    <div>
+      <label class="block text-sm font-bold mb-2" style="color:#29170c">Add a photo (optional)</label>
+      <div style="border:2px dashed #c09080;border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:background 0.15s;position:relative"
+           id="drop-zone">
+        <span class="material-symbols-outlined" style="font-size:32px;color:#8a6555;display:block;margin-bottom:8px">image</span>
+        <p style="font-size:14px;color:#8a6555;font-weight:600">Click to upload or drag & drop</p>
+        <p style="font-size:12px;color:#a07060;margin-top:4px">JPG, PNG, GIF, WebP · Max 10MB</p>
+        <input type="file" id="id_image" name="image" accept="image/*"
+               style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%" />
+      </div>
+      <!-- Preview -->
+      <div style="margin-top:12px;display:none" id="preview-wrap">
+        <img id="image-preview" src="" alt="Preview"
+             style="max-width:100%;border:3px solid #29170c;border-radius:10px;box-shadow:4px 4px 0 #29170c;max-height:320px;object-fit:cover" />
+        <button type="button" id="clear-image" class="btn-ghost" style="margin-top:8px;color:#bb010d;font-size:12px">
+          <span class="material-symbols-outlined" style="font-size:14px">close</span>
+          Remove image
+        </button>
+      </div>
+    </div>
+
+    <!-- Submit -->
+    <div class="flex gap-3" style="border-top:2px solid #ffeadf;padding-top:20px">
+      <a href="{% url 'home' %}" class="btn-secondary flex-1 justify-center">Cancel</a>
+      <button type="submit" class="btn-primary flex-1 justify-center" style="font-size:15px;padding:12px">
+        <span class="material-symbols-outlined" style="font-size:18px">send</span>
+        Publish Post
+      </button>
+    </div>
+  </form>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  const imageInput = document.getElementById('id_image');
+  const imagePreview = document.getElementById('image-preview');
+  const previewWrap = document.getElementById('preview-wrap');
+  const clearBtn = document.getElementById('clear-image');
+  const dropZone = document.getElementById('drop-zone');
+
+  imageInput.addEventListener('change', function() {
+    const file = this.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        imagePreview.src = e.target.result;
+        previewWrap.style.display = 'block';
+        dropZone.style.display = 'none';
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
+  clearBtn.addEventListener('click', function() {
+    imageInput.value = '';
+    imagePreview.src = '';
+    previewWrap.style.display = 'none';
+    dropZone.style.display = 'block';
+  });
+
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.background = '#ffeadf'; });
+  dropZone.addEventListener('dragleave', () => { dropZone.style.background = ''; });
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.style.background = '';
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      imageInput.files = dt.files;
+      imageInput.dispatchEvent(new Event('change'));
+    }
+  });
+</script>
+{% endblock %}

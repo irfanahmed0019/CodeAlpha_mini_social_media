@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Edit Profile{% endblock %}
+
+{% block main_content %}
+
+<div class="card-style p-6" style="background:white;max-width:520px;margin:0 auto">
+  <h1 class="font-extrabold text-xl mb-6" style="color:#29170c">
+    <span class="material-symbols-outlined" style="vertical-align:middle;font-size:22px">edit</span>
+    Edit Profile
+  </h1>
+
+  <form method="post" enctype="multipart/form-data" class="flex flex-col gap-5">
+    {% csrf_token %}
+
+    <!-- Avatar -->
+    <div class="text-center">
+      {% if request.user.profile.avatar %}
+        <img src="{{ request.user.profile.avatar.url }}" alt="" class="avatar avatar-xl mx-auto mb-3" />
+      {% else %}
+        <div class="avatar avatar-xl mx-auto mb-3" style="font-size:36px;background:#ffeadf">{{ request.user.username|first|upper }}</div>
+      {% endif %}
+      <label class="btn-secondary cursor-pointer" style="font-size:13px;display:inline-flex">
+        <span class="material-symbols-outlined" style="font-size:16px">photo_camera</span>
+        Change photo
+        <input type="file" name="avatar" accept="image/*" class="hidden" id="id_avatar" />
+      </label>
+      <img id="avatar-preview" src="" style="display:none;width:96px;height:96px;border-radius:50%;border:3px solid #29170c;object-fit:cover;margin:12px auto 0" />
+    </div>
+
+    <!-- Name -->
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="block text-sm font-bold mb-1.5" style="color:#29170c">First name</label>
+        <input type="text" name="first_name" class="form-input" value="{{ form.first_name.value|default:'' }}" placeholder="Jane" />
+      </div>
+      <div>
+        <label class="block text-sm font-bold mb-1.5" style="color:#29170c">Last name</label>
+        <input type="text" name="last_name" class="form-input" value="{{ form.last_name.value|default:'' }}" placeholder="Doe" />
+      </div>
+    </div>
+
+    <!-- Bio -->
+    <div>
+      <label class="block text-sm font-bold mb-1.5" style="color:#29170c">Bio</label>
+      <textarea name="bio" class="form-input" rows="3" maxlength="500" placeholder="Tell people about yourself...">{{ form.bio.value|default:'' }}</textarea>
+    </div>
+
+    <!-- Website -->
+    <div>
+      <label class="block text-sm font-bold mb-1.5" style="color:#29170c">Website</label>
+      <input type="url" name="website" class="form-input" value="{{ form.website.value|default:'' }}" placeholder="https://yoursite.com" />
+    </div>
+
+    <div class="flex gap-3" style="border-top:2px solid #ffeadf;padding-top:20px">
+      <a href="{% url 'profile' username=request.user.username %}" class="btn-secondary flex-1 justify-center">Cancel</a>
+      <button type="submit" class="btn-primary flex-1 justify-center" style="font-size:15px;padding:12px">
+        <span class="material-symbols-outlined" style="font-size:18px">save</span>
+        Save Changes
+      </button>
+    </div>
+  </form>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  document.getElementById('id_avatar').addEventListener('change', function() {
+    const file = this.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const prev = document.getElementById('avatar-preview');
+        prev.src = e.target.result;
+        prev.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+</script>
+{% endblock %}

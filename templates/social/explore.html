@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}Explore{% endblock %}
+
+{% block main_content %}
+
+<!-- Search bar -->
+<div class="card-style p-4 mb-5" style="background:white">
+  <form method="get" action="{% url 'explore' %}">
+    <div class="flex gap-3">
+      <div class="flex-1 relative">
+        <input type="text" name="q" value="{{ query }}" class="form-input" placeholder="Search posts, people..."
+               style="padding-left:40px" />
+        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2" style="color:#8a6555;font-size:20px">search</span>
+      </div>
+      <button type="submit" class="btn-primary" style="padding:10px 20px">Search</button>
+    </div>
+  </form>
+</div>
+
+{% if query %}
+  <!-- User results -->
+  {% if users %}
+  <div class="card-style p-4 mb-5" style="background:white">
+    <h3 class="font-extrabold text-sm mb-4" style="letter-spacing:-0.02em">PEOPLE</h3>
+    <div class="flex flex-col gap-3">
+      {% for u in users %}
+      <div class="flex items-center gap-3">
+        <a href="{% url 'profile' username=u.username %}">
+          {% if u.profile.avatar %}
+            <img src="{{ u.profile.avatar.url }}" alt="" class="avatar avatar-md" />
+          {% else %}
+            <div class="avatar avatar-md">{{ u.username|first|upper }}</div>
+          {% endif %}
+        </a>
+        <div class="flex-1">
+          <a href="{% url 'profile' username=u.username %}" class="username-link font-bold">{{ u.username }}</a>
+          {% if u.get_full_name %}<p class="text-sm" style="color:#8a6555">{{ u.get_full_name }}</p>{% endif %}
+          <p class="text-xs" style="color:#8a6555">{{ u.profile.followers_count }} followers · {{ u.profile.posts_count }} posts</p>
+        </div>
+        {% if u != request.user %}
+        <button class="follow-btn {% if u.id in following_ids %}is-following{% else %}not-following{% endif %}"
+                data-username="{{ u.username }}">
+          {% if u.id in following_ids %}Following{% else %}Follow{% endif %}
+        </button>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <p class="font-bold text-sm mb-4" style="color:#8a6555">
+    {% if posts %}{{ posts|length }} post{{ posts|length|pluralize }} for "{{ query }}"{% else %}No posts found for "{{ query }}"{% endif %}
+  </p>
+{% endif %}
+
+<!-- Post grid -->
+{% if posts %}
+<div class="masonry-grid">
+  {% for post in posts %}
+  <div class="masonry-item">
+    <article style="background:white;border:3px solid #29170c;border-radius:12px;box-shadow:4px 4px 0 #29170c;overflow:hidden;transition:all 0.15s">
+      {% if post.image %}
+        <a href="{% url 'post_detail' post_id=post.id %}">
+          <img src="{{ post.image.url }}" alt="" style="width:100%;display:block;border-bottom:2px solid #29170c;object-fit:cover;max-height:320px" loading="lazy" />
+        </a>
+      {% endif %}
+      <div style="padding:12px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <a href="{% url 'profile' username=post.user.username %}">
+            {% if post.user.profile.avatar %}
+              <img src="{{ post.user.profile.avatar.url }}" alt="" class="avatar avatar-sm" />
+            {% else %}
+              <div class="avatar avatar-sm">{{ post.user.username|first|upper }}</div>
+            {% endif %}
+          </a>
+          <div>
+            <a href="{% url 'profile' username=post.user.username %}" class="username-link" style="font-size:13px">{{ post.user.username }}</a>
+            <p class="post-time">{{ post.created_at|timesince }} ago</p>
+          </div>
+        </div>
+        {% if post.content %}
+          <p style="font-size:13px;line-height:1.5;color:#29170c;margin-bottom:10px">{{ post.content|truncatechars:120 }}</p>
+        {% endif %}
+        <div style="display:flex;align-items:center;gap:12px">
+          <button class="like-btn {% if post.id in liked_post_ids %}liked{% endif %}" data-post-id="{{ post.id }}" style="font-size:13px;padding:4px 8px">
+            <span class="material-symbols-outlined like-icon" style="font-size:16px;{% if post.id in liked_post_ids %}font-variation-settings:'FILL' 1{% endif %}">favorite</span>
+            <span class="like-count">{{ post.likes_count }}</span>
+          </button>
+          <a href="{% url 'post_detail' post_id=post.id %}" class="comment-btn" style="font-size:13px;padding:4px 8px">
+            <span class="material-symbols-outlined" style="font-size:16px">chat_bubble</span>
+            <span>{{ post.comments_count }}</span>
+          </a>
+        </div>
+      </div>
+    </article>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <div class="empty-icon">🔍</div>
+  <h3>Nothing here yet</h3>
+  <p>Be the first to post something!</p>
+  <a href="{% url 'create_post' %}" class="btn-primary mt-4">
+    <span class="material-symbols-outlined" style="font-size:16px">add</span>
+    Create Post
+  </a>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block right_panel %}
+<div class="card-style p-4" style="background:white">
+  <h3 class="font-extrabold text-sm mb-3" style="letter-spacing:-0.02em">QUICK LINKS</h3>
+  <div class="flex flex-col gap-2">
+    <a href="{% url 'create_post' %}" class="btn-primary w-full justify-center">
+      <span class="material-symbols-outlined" style="font-size:16px">add_box</span>
+      New Post
+    </a>
+    <a href="{% url 'profile' username=request.user.username %}" class="btn-secondary w-full justify-center">
+      <span class="material-symbols-outlined" style="font-size:16px">person</span>
+      My Profile
+    </a>
+  </div>
+</div>
+{% endblock %}

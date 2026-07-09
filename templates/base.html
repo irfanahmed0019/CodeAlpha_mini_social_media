@@ -1,0 +1,147 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Vibe{% endblock %} — Vibe Social</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+  <script>
+    tailwind.config = {
+      theme: { extend: { fontFamily: { sans: ['Be Vietnam Pro', 'sans-serif'] } } }
+    }
+  </script>
+  <style>
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24; }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="min-h-screen" style="background:#fff8f5">
+
+{% if user.is_authenticated %}
+<!-- Layout -->
+<div class="layout-grid">
+
+  <!-- Left Sidebar -->
+  <aside class="left-panel sticky top-6 self-start" style="height:calc(100vh - 48px); overflow-y:auto;">
+    <a href="{% url 'home' %}" class="logo mb-8 block px-2">Vibe<span>.</span></a>
+
+    <nav class="sidebar-nav flex flex-col gap-1 mb-8">
+      <a href="{% url 'home' %}" class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+        <span class="material-symbols-outlined">home</span>
+        <span>Home</span>
+      </a>
+      <a href="{% url 'explore' %}" class="{% if request.resolver_match.url_name == 'explore' %}active{% endif %}">
+        <span class="material-symbols-outlined">explore</span>
+        <span>Explore</span>
+      </a>
+      <a href="{% url 'profile' username=request.user.username %}" class="{% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
+        <span class="material-symbols-outlined">person</span>
+        <span>Profile</span>
+      </a>
+      <a href="{% url 'create_post' %}">
+        <span class="material-symbols-outlined">add_box</span>
+        <span>New Post</span>
+      </a>
+    </nav>
+
+    <!-- Mini profile -->
+    <div class="mt-auto" style="border-top:2px solid #e8d0c0;padding-top:16px">
+      <div class="flex items-center gap-3 mb-3 px-2">
+        {% if request.user.profile.avatar %}
+          <img src="{{ request.user.profile.avatar.url }}" alt="" class="avatar avatar-sm" />
+        {% else %}
+          <div class="avatar avatar-sm">{{ request.user.username|first|upper }}</div>
+        {% endif %}
+        <div>
+          <p class="font-bold text-sm leading-tight">{{ request.user.username }}</p>
+          <p class="text-xs" style="color:#8a6555">{{ request.user.get_full_name }}</p>
+        </div>
+      </div>
+      <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn-ghost w-full justify-center" style="font-size:13px;">
+          <span class="material-symbols-outlined" style="font-size:16px">logout</span>
+          Sign out
+        </button>
+      </form>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="min-w-0 pb-20 md:pb-6">
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-success{% endif %} mb-4">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+    {% block main_content %}{% endblock %}
+  </main>
+
+  <!-- Right Panel -->
+  <aside class="right-panel sticky top-6 self-start" style="height:calc(100vh - 48px); overflow-y:auto;">
+    <!-- Search -->
+    <div class="relative mb-5">
+      <input id="search-input" type="text" class="form-input" placeholder="Search people..."
+             style="padding-left:38px" />
+      <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style="color:#8a6555;font-size:18px">search</span>
+      <div id="search-results" class="absolute w-full bg-white border-2 border-[#29170c] rounded-xl mt-1 z-50 shadow-lg" style="display:none;max-height:300px;overflow-y:auto;"></div>
+    </div>
+
+    {% block right_panel %}{% endblock %}
+  </aside>
+
+</div>
+
+<!-- Mobile Bottom Nav -->
+<nav class="mobile-nav">
+  <a href="{% url 'home' %}" class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+    <span class="material-symbols-outlined" style="font-size:24px">home</span>
+    <span>Home</span>
+  </a>
+  <a href="{% url 'explore' %}" class="{% if request.resolver_match.url_name == 'explore' %}active{% endif %}">
+    <span class="material-symbols-outlined" style="font-size:24px">explore</span>
+    <span>Explore</span>
+  </a>
+  <a href="{% url 'create_post' %}">
+    <span class="material-symbols-outlined" style="font-size:24px">add_circle</span>
+    <span>Post</span>
+  </a>
+  <a href="{% url 'profile' username=request.user.username %}">
+    <span class="material-symbols-outlined" style="font-size:24px">person</span>
+    <span>Profile</span>
+  </a>
+</nav>
+
+{% else %}
+<!-- Unauthenticated layout -->
+<main class="min-h-screen flex items-center justify-center p-4">
+  {% if messages %}
+    <div style="position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:100;width:90%;max-width:400px">
+      {% for message in messages %}
+        <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-success{% endif %}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+  {% block content %}{% endblock %}
+</main>
+{% endif %}
+
+<style>
+  .search-result-item {
+    display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+    text-decoration: none; color: #29170c; transition: background 0.1s;
+    font-size: 14px; font-weight: 600; border-bottom: 1px solid #ffeadf;
+  }
+  .search-result-item:last-child { border-bottom: none; }
+  .search-result-item:hover { background: #fff8f5; }
+</style>
+<script src="{% static 'js/script.js' %}"></script>
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>
